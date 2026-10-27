@@ -1,6 +1,8 @@
 # Lab Layout Planner
 
-A PyQt5 desktop application for planning optical table layouts in laser labs. Import CAD components from STEP files with actual 2D silhouette projections, arrange them on optical tables, and save/load layouts.
+Plan optical table layouts for laser labs. Import CAD components from STEP files with actual 2D silhouette projections, arrange them on tables, and share layouts.
+
+**[Use the Web Planner](https://songhuanyu1016.github.io/lab-layout-planner/)** — no installation needed, runs in your browser.
 
 ![Lab Layout Planner](https://img.shields.io/badge/Python-3.9%2B-blue) ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -74,6 +76,25 @@ python lab_layout.py --convert input.stp output.comp.json 5.0 mm
 ## Component Library
 
 Place `.comp.json` files in the `Library/` folder next to `lab_layout.py`. They appear automatically in the Component Library panel. Right-click to organize into categories.
+
+## Adding Components to the Shared Library
+
+### Option 1: Upload STP file (automatic conversion)
+
+1. Add your `.stp` file to the [`STP-upload/`](STP-upload/) folder in this repo
+2. Commit and push to `main`
+3. GitHub Actions automatically converts it, adds to `Library/`, and updates the web planner
+
+### Option 2: Upload .comp.json directly
+
+1. Convert locally: `python lab_layout.py --convert input.stp output.comp.json 5.0 mm`
+2. Add the `.comp.json` file to the `Library/` folder
+3. Commit and push
+
+### Option 3: Use the web planner
+
+1. Click **"+ Upload"** in the web planner to load a `.comp.json` file for your current session
+2. To make it permanent, submit a PR adding the file to `Library/`
 
 ## License
 

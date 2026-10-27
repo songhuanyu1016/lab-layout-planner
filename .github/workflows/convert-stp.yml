@@ -1,0 +1,76 @@
+name: Convert STP to Component
+
+on:
+  push:
+    paths:
+      - 'STP-upload/*.stp'
+      - 'STP-upload/*.step'
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install cadquery numpy scipy matplotlib
+
+      - name: Convert STP files
+        run: |
+          for stp in STP-upload/*.stp STP-upload/*.step; do
+            [ -f "$stp" ] || continue
+            base=$(basename "$stp" | sed 's/\.\(stp\|step\)$//')
+            out="Library/${base}.comp.json"
+            if [ -f "$out" ]; then
+              echo "SKIP: $out already exists"
+              continue
+            fi
+            echo "Converting: $stp -> $out"
+            python lab_layout.py --convert "$stp" "$out" 5.0 mm
+          done
+
+      - name: Update library index
+        run: |
+          python -c "
+          import json, os
+          lib = 'Library'
+          index = []
+          for f in sorted(os.listdir(lib)):
+              if not f.endswith('.comp.json'):
+                  continue
+              with open(os.path.join(lib, f)) as fp:
+                  data = json.load(fp)
+              projs = data.get('projections', {})
+              sizes = {}
+              for plane in ['XY','XZ','YZ']:
+                  p = projs.get(plane, {})
+                  if p.get('width'):
+                      sizes[plane] = {'w': round(p['width'],1), 'h': round(p['height'],1)}
+              index.append({
+                  'file': f,
+                  'name': os.path.splitext(f)[0].replace('.comp',''),
+                  'internal_name': data.get('name',''),
+                  'category': data.get('category','Uncategorized'),
+                  'source': data.get('source_file',''),
+                  'sizes': sizes
+              })
+          with open(os.path.join(lib, 'index.json'), 'w') as fp:
+              json.dump(index, fp, indent=2)
+          print(f'Updated index: {len(index)} components')
+          "
+
+      - name: Clean up STP files
+        run: rm -f STP-upload/*.stp STP-upload/*.step
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Library/ STP-upload/
+          git diff --cached --quiet || git commit -m "Auto-convert STP files to component library"
+          git push
