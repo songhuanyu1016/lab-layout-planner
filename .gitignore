@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.layout.json
+.claude/
+hlr_test.png
+test*.comp.json
