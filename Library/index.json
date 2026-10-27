@@ -1,0 +1,359 @@
+[
+  {
+    "file": "1m MPC.comp.json",
+    "name": "1m MPC",
+    "internal_name": "MPC 0.4 mJ",
+    "category": "MPC",
+    "source": "MPC 0.4 mJ.stp",
+    "sizes": {
+      "XY": {
+        "w": 32.6,
+        "h": 20.6
+      },
+      "XZ": {
+        "w": 32.6,
+        "h": 51.2
+      },
+      "YZ": {
+        "w": 20.6,
+        "h": 51.2
+      }
+    }
+  },
+  {
+    "file": "2m MPC.comp.json",
+    "name": "2m MPC",
+    "internal_name": "C2mJ",
+    "category": "MPC",
+    "source": "C2mJ.stp",
+    "sizes": {
+      "XY": {
+        "w": 15.3,
+        "h": 15.3
+      },
+      "XZ": {
+        "w": 15.3,
+        "h": 89.8
+      },
+      "YZ": {
+        "w": 15.3,
+        "h": 89.8
+      }
+    }
+  },
+  {
+    "file": "38 mm Haas Shutter with big beam dump.comp.json",
+    "name": "38 mm Haas Shutter with big beam dump",
+    "internal_name": "SSHP-38-AU-HBW-DDD-bigbeam dump",
+    "category": "Shutters",
+    "source": "SSHP-38-AU-HBW-DDD-bigbeam dump.stp",
+    "sizes": {
+      "XY": {
+        "w": 9.3,
+        "h": 14.1
+      },
+      "XZ": {
+        "w": 9.3,
+        "h": 4.7
+      },
+      "YZ": {
+        "w": 14.1,
+        "h": 4.7
+      }
+    }
+  },
+  {
+    "file": "38 mm Haas Shutter with small beam dump.comp.json",
+    "name": "38 mm Haas Shutter with small beam dump",
+    "internal_name": "HAAS shutter",
+    "category": "Shutters",
+    "source": "HAAS shutter.stp",
+    "sizes": {
+      "XY": {
+        "w": 9.0,
+        "h": 4.2
+      },
+      "XZ": {
+        "w": 9.0,
+        "h": 9.8
+      },
+      "YZ": {
+        "w": 4.2,
+        "h": 9.8
+      }
+    }
+  },
+  {
+    "file": "4m MPC.comp.json",
+    "name": "4m MPC",
+    "internal_name": "MPC10 mJ",
+    "category": "MPC",
+    "source": "MPC10 mJ.stp",
+    "sizes": {
+      "XY": {
+        "w": 18.7,
+        "h": 14.7
+      },
+      "XZ": {
+        "w": 18.7,
+        "h": 168.0
+      },
+      "YZ": {
+        "w": 14.7,
+        "h": 168.0
+      }
+    }
+  },
+  {
+    "file": "AFS_1um_amplifier.comp.json",
+    "name": "AFS_1um_amplifier",
+    "internal_name": "AFS_1um_amplifier",
+    "category": "Lasers",
+    "source": "AFS_1um_amplifier.stp",
+    "sizes": {
+      "XY": {
+        "w": 44.1,
+        "h": 21.1
+      },
+      "XZ": {
+        "w": 44.1,
+        "h": 9.8
+      },
+      "YZ": {
+        "w": 21.1,
+        "h": 9.8
+      }
+    }
+  },
+  {
+    "file": "AFS_1um_oscillator.comp.json",
+    "name": "AFS_1um_oscillator",
+    "internal_name": "AFS_1um_oscillator",
+    "category": "Lasers",
+    "source": "AFS_1um_oscillator.stp",
+    "sizes": {
+      "XY": {
+        "w": 19.9,
+        "h": 16.3
+      },
+      "XZ": {
+        "w": 19.9,
+        "h": 5.5
+      },
+      "YZ": {
+        "w": 16.3,
+        "h": 5.5
+      }
+    }
+  },
+  {
+    "file": "ASC seedenclosure.comp.json",
+    "name": "ASC seedenclosure",
+    "internal_name": "seedenclosure",
+    "category": "ASC",
+    "source": "seedenclosure.stp",
+    "sizes": {
+      "XY": {
+        "w": 58.5,
+        "h": 14.5
+      },
+      "XZ": {
+        "w": 58.5,
+        "h": 8.8
+      },
+      "YZ": {
+        "w": 14.5,
+        "h": 8.8
+      }
+    }
+  },
+  {
+    "file": "ASC shutter enclosure.comp.json",
+    "name": "ASC shutter enclosure",
+    "internal_name": "shutter enclosure 2",
+    "category": "ASC",
+    "source": "shutter enclosure 2.stp",
+    "sizes": {
+      "XY": {
+        "w": 12.0,
+        "h": 16.0
+      },
+      "XZ": {
+        "w": 12.0,
+        "h": 9.0
+      },
+      "YZ": {
+        "w": 16.0,
+        "h": 9.0
+      }
+    }
+  },
+  {
+    "file": "Amphos AOM.comp.json",
+    "name": "Amphos AOM",
+    "internal_name": "Amphos AOM",
+    "category": "Lasers",
+    "source": "Amphos AOM.stp",
+    "sizes": {
+      "XY": {
+        "w": 43.9,
+        "h": 8.5
+      },
+      "XZ": {
+        "w": 43.9,
+        "h": 10.6
+      },
+      "YZ": {
+        "w": 8.5,
+        "h": 10.6
+      }
+    }
+  },
+  {
+    "file": "Amphos Amp.comp.json",
+    "name": "Amphos Amp",
+    "internal_name": "Amphos Amp",
+    "category": "Lasers",
+    "source": "Amphos Amp.stp",
+    "sizes": {
+      "XY": {
+        "w": 28.4,
+        "h": 54.2
+      },
+      "XZ": {
+        "w": 28.4,
+        "h": 15.3
+      },
+      "YZ": {
+        "w": 54.2,
+        "h": 15.3
+      }
+    }
+  },
+  {
+    "file": "Amphos Compressor.comp.json",
+    "name": "Amphos Compressor",
+    "internal_name": "Amphos Compressor",
+    "category": "Lasers",
+    "source": "Amphos Compressor.stp",
+    "sizes": {
+      "XY": {
+        "w": 28.6,
+        "h": 52.8
+      },
+      "XZ": {
+        "w": 28.6,
+        "h": 15.4
+      },
+      "YZ": {
+        "w": 52.8,
+        "h": 15.4
+      }
+    }
+  },
+  {
+    "file": "Carbide.comp.json",
+    "name": "Carbide",
+    "internal_name": "CB3 PM-03-0103",
+    "category": "Lasers",
+    "source": "CB3 PM-03-0103.stp",
+    "sizes": {
+      "XY": {
+        "w": 28.6,
+        "h": 13.8
+      },
+      "XZ": {
+        "w": 28.6,
+        "h": 6.8
+      },
+      "YZ": {
+        "w": 13.8,
+        "h": 6.8
+      }
+    }
+  },
+  {
+    "file": "Central Lab Tables.comp.json",
+    "name": "Central Lab Tables",
+    "internal_name": "central tables",
+    "category": "ASC",
+    "source": "central tables.stp",
+    "sizes": {
+      "XY": {
+        "w": 229.0,
+        "h": 12.0
+      },
+      "XZ": {
+        "w": 229.0,
+        "h": 312.2
+      },
+      "YZ": {
+        "w": 12.0,
+        "h": 312.2
+      }
+    }
+  },
+  {
+    "file": "Flint.comp.json",
+    "name": "Flint",
+    "internal_name": "Flint",
+    "category": "Lasers",
+    "source": "Flint.stp",
+    "sizes": {
+      "XY": {
+        "w": 17.9,
+        "h": 8.1
+      },
+      "XZ": {
+        "w": 17.9,
+        "h": 4.5
+      },
+      "YZ": {
+        "w": 8.1,
+        "h": 4.5
+      }
+    }
+  },
+  {
+    "file": "LC Orpheus HE.comp.json",
+    "name": "LC Orpheus HE",
+    "internal_name": "LC Orpheus HE",
+    "category": "OPA",
+    "source": "LC Orpheus HE.stp",
+    "sizes": {
+      "XY": {
+        "w": 42.8,
+        "h": 13.7
+      },
+      "XZ": {
+        "w": 42.8,
+        "h": 7.2
+      },
+      "YZ": {
+        "w": 13.7,
+        "h": 7.2
+      }
+    }
+  },
+  {
+    "file": "LC Orpheus One.comp.json",
+    "name": "LC Orpheus One",
+    "internal_name": "LC Orpheus no extras",
+    "category": "OPA",
+    "source": "LC Orpheus no extras.stp",
+    "sizes": {
+      "XY": {
+        "w": 41.6,
+        "h": 12.6
+      },
+      "XZ": {
+        "w": 41.6,
+        "h": 7.2
+      },
+      "YZ": {
+        "w": 12.6,
+        "h": 7.2
+      }
+    }
+  }
+]

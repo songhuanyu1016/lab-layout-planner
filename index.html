@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Layout Planner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<style>
+:root {
+  --bg: #f5f5f5; --panel: #ffffff; --border: #ddd; --text: #222;
+  --accent: #2266cc; --grid: #e0e0e0; --toolbar: #fafafa;
+}
+[data-theme="dark"] {
+  --bg: #1e1e2e; --panel: #252535; --border: #444; --text: #ddd;
+  --accent: #4499ff; --grid: #333344; --toolbar: #2a2a3a;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* Toolbar */
+#toolbar { display: flex; gap: 4px; padding: 6px 10px; background: var(--toolbar);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+#toolbar button, #toolbar select { padding: 4px 10px; border: 1px solid var(--border);
+  border-radius: 4px; background: var(--panel); color: var(--text); cursor: pointer; font-size: 13px; }
+#toolbar button:hover { background: var(--accent); color: #fff; }
+#toolbar button.active { background: var(--accent); color: #fff; }
+.tb-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+/* Main layout */
+#main { display: flex; flex: 1; overflow: hidden; }
+
+/* Library panel */
+#library { width: 220px; background: var(--panel); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; }
+#library h3 { padding: 8px 10px; font-size: 13px; border-bottom: 1px solid var(--border); }
+#lib-search { margin: 6px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 12px; background: var(--bg); color: var(--text); }
+#lib-tree { flex: 1; overflow-y: auto; padding: 4px; font-size: 12px; }
+.lib-cat { font-weight: bold; padding: 4px 6px; cursor: pointer; user-select: none; }
+.lib-cat::before { content: '\25BC '; font-size: 10px; }
+.lib-cat.collapsed::before { content: '\25B6 '; }
+.lib-item { padding: 3px 6px 3px 20px; cursor: pointer; border-radius: 3px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.lib-item:hover { background: var(--accent); color: #fff; }
+.lib-item.selected { background: var(--accent); color: #fff; }
+
+/* Canvas area */
+#canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+canvas { display: block; }
+
+/* Layer panel */
+#layers { width: 180px; background: var(--panel); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; }
+#layers h3 { padding: 8px 10px; font-size: 13px; border-bottom: 1px solid var(--border); }
+#layer-list { flex: 1; overflow-y: auto; padding: 4px; font-size: 12px; }
+.layer-item { padding: 4px 6px; cursor: pointer; border-radius: 3px;
+  display: flex; justify-content: space-between; align-items: center; }
+.layer-item:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.layer-item.selected { background: var(--accent); color: #fff; }
+.layer-btns { display: flex; gap: 2px; }
+.layer-btns button { padding: 2px 6px; font-size: 10px; border: 1px solid var(--border);
+  background: var(--panel); border-radius: 2px; cursor: pointer; color: var(--text); }
+
+/* Status bar */
+#status { padding: 4px 10px; font-size: 12px; background: var(--toolbar);
+  border-top: 1px solid var(--border); display: flex; gap: 20px; }
+
+/* Context menu */
+#ctx-menu { position: fixed; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.15); padding: 4px 0;
+  font-size: 13px; z-index: 1000; display: none; min-width: 180px; }
+#ctx-menu div { padding: 5px 16px; cursor: pointer; }
+#ctx-menu div:hover { background: var(--accent); color: #fff; }
+#ctx-menu hr { border: none; border-top: 1px solid var(--border); margin: 3px 0; }
+
+/* Modal */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 900;
+  display: flex; align-items: center; justify-content: center; }
+.modal { background: var(--panel); border-radius: 10px; padding: 20px; min-width: 400px;
+  max-width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,.2); }
+.modal h3 { margin-bottom: 12px; }
+.modal label { display: block; margin: 8px 0 2px; font-size: 13px; }
+.modal input, .modal select { width: 100%; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 4px; font-size: 13px; background: var(--bg); color: var(--text); }
+.modal .btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.modal button { padding: 6px 16px; border: 1px solid var(--border); border-radius: 4px;
+  cursor: pointer; font-size: 13px; background: var(--panel); color: var(--text); }
+.modal button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.proj-row { display: flex; gap: 12px; margin: 10px 0; }
+.proj-card { flex: 1; text-align: center; border: 2px solid var(--border); border-radius: 6px;
+  padding: 8px; cursor: pointer; }
+.proj-card.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.proj-card img { max-width: 100%; max-height: 140px; }
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <button onclick="newLayout()" title="New layout">New</button>
+  <button onclick="saveLayout()" title="Save (Ctrl+S)">Save</button>
+  <button onclick="saveLayoutAs()" title="Save As">Save As</button>
+  <button onclick="loadLayout()" title="Open (Ctrl+O)">Open</button>
+  <span class="tb-sep"></span>
+  <button onclick="undo()" title="Undo (Ctrl+Z)">Undo</button>
+  <button onclick="redo()" title="Redo (Ctrl+Shift+Z)">Redo</button>
+  <span class="tb-sep"></span>
+  <button onclick="addManual()" title="Add manual component (Ctrl+N)">+ Manual</button>
+  <button onclick="uploadComp()" title="Upload .comp.json">+ Upload</button>
+  <span class="tb-sep"></span>
+  <button id="btn-grid" onclick="toggleGrid()" title="Toggle grid (G)">Grid: ON</button>
+  <button id="btn-snap" onclick="toggleSnap()" title="Toggle snap (S)">Snap: 6"</button>
+  <button onclick="zoomIn()">Zoom +</button>
+  <button onclick="zoomOut()">Zoom -</button>
+  <button onclick="zoomFit()">Fit</button>
+  <button id="btn-measure" onclick="toggleMeasure()" title="Measure (M)">Measure</button>
+  <span class="tb-sep"></span>
+  <button onclick="exportPNG()" title="Export PNG">Export PNG</button>
+  <button onclick="toggleTheme()">Theme</button>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <!-- Library -->
+  <div id="library">
+    <h3>Component Library</h3>
+    <input type="text" id="lib-search" placeholder="Search..." oninput="filterLibrary()">
+    <div id="lib-tree"></div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+  </div>
+
+  <!-- Layers -->
+  <div id="layers">
+    <h3>Layers</h3>
+    <div id="layer-list"></div>
+  </div>
+</div>
+
+<!-- Status -->
+<div id="status">
+  <span id="st-pos">X: 0.0" Y: 0.0"</span>
+  <span id="st-zoom">Zoom: 100%</span>
+  <span id="st-sel"></span>
+</div>
+
+<!-- Context menu -->
+<div id="ctx-menu"></div>
+
+<script>
+// ============================================================================
+//  STATE
+// ============================================================================
+const INCH = 1; // 1 unit = 1 inch in canvas coords
+const GRID_DEFAULT = 6;
+let gridSize = GRID_DEFAULT, gridOn = true, snapOn = true;
+let measureMode = false, measureStart = null;
+let currentFile = null;
+let undoStack = [], redoStack = [];
+let libraryIndex = [];
+let selectedProjection = 'XY';
+
+// ============================================================================
+//  CANVAS SETUP
+// ============================================================================
+const canvasEl = document.getElementById('c');
+const wrap = document.getElementById('canvas-wrap');
+
+function resizeCanvas() {
+  canvasEl.width = wrap.clientWidth;
+  canvasEl.height = wrap.clientHeight;
+  if (window.fc) { fc.setWidth(wrap.clientWidth); fc.setHeight(wrap.clientHeight); fc.renderAll(); }
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+const fc = new fabric.Canvas('c', {
+  selection: true, preserveObjectStacking: true,
+  fireRightClick: true, stopContextMenu: true,
+});
+fc.setWidth(wrap.clientWidth);
+fc.setHeight(wrap.clientHeight);
+
+// Viewport: start centered
+fc.setViewportTransform([1, 0, 0, 1, wrap.clientWidth/2, wrap.clientHeight/2]);
+
+// ============================================================================
+//  GRID
+// ============================================================================
+function drawGrid() {
+  fc.renderAll();
+  if (!gridOn) return;
+  const ctx = fc.getContext('2d');
+  const vpt = fc.viewportTransform;
+  const zoom = fc.getZoom();
+  const w = fc.getWidth(), h = fc.getHeight();
+
+  // Visible scene bounds
+  const left = -vpt[4] / zoom, top = -vpt[5] / zoom;
+  const right = left + w / zoom, bottom = top + h / zoom;
+  const step = gridSize;
+
+  ctx.save();
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  for (let x = Math.floor(left / step) * step; x <= right; x += step) {
+    const sx = x * zoom + vpt[4];
+    ctx.moveTo(sx, 0); ctx.lineTo(sx, h);
+  }
+  for (let y = Math.floor(top / step) * step; y <= bottom; y += step) {
+    const sy = y * zoom + vpt[5];
+    ctx.moveTo(0, sy); ctx.lineTo(w, sy);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+fc.on('after:render', drawGrid);
+
+// ============================================================================
+//  ZOOM & PAN
+// ============================================================================
+fc.on('mouse:wheel', function(opt) {
+  const e = opt.e;
+  e.preventDefault(); e.stopPropagation();
+  const delta = e.deltaY;
+  let zoom = fc.getZoom();
+  const factor = 1 - delta * 0.001;
+  zoom *= factor;
+  zoom = Math.min(Math.max(zoom, 0.02), 50);
+  fc.zoomToPoint({ x: e.offsetX, y: e.offsetY }, zoom);
+  updateStatus();
+});
+
+// Pan: drag on empty area or space+drag
+let isPanning = false, panStart = null;
+fc.on('mouse:down', function(opt) {
+  const e = opt.e;
+  if (measureMode) return;
+  if (!opt.target && e.button === 0) {
+    isPanning = true;
+    panStart = { x: e.clientX, y: e.clientY };
+    fc.selection = false;
+  }
+});
+fc.on('mouse:move', function(opt) {
+  if (isPanning && panStart) {
+    const e = opt.e;
+    const vpt = fc.viewportTransform;
+    vpt[4] += e.clientX - panStart.x;
+    vpt[5] += e.clientY - panStart.y;
+    panStart = { x: e.clientX, y: e.clientY };
+    fc.requestRenderAll();
+  }
+  // Status bar
+  const p = fc.getPointer(opt.e);
+  document.getElementById('st-pos').textContent = `X: ${p.x.toFixed(1)}" Y: ${p.y.toFixed(1)}" (${(p.x/12).toFixed(1)}' x ${(p.y/12).toFixed(1)}')`;
+});
+fc.on('mouse:up', function() {
+  isPanning = false; panStart = null;
+  fc.selection = true;
+});
+
+// ============================================================================
+//  SNAP
+// ============================================================================
+fc.on('object:moving', function(opt) {
+  if (!snapOn) return;
+  const obj = opt.target;
+  obj.set({ left: Math.round(obj.left / gridSize) * gridSize,
+            top: Math.round(obj.top / gridSize) * gridSize });
+});
+
+// ============================================================================
+//  UNDO / REDO
+// ============================================================================
+function saveState() {
+  undoStack.push(JSON.stringify(fc.toJSON(['name','compFile','locked','compColor'])));
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack = [];
+}
+function undo() {
+  if (undoStack.length < 1) return;
+  redoStack.push(JSON.stringify(fc.toJSON(['name','compFile','locked','compColor'])));
+  const state = undoStack.pop();
+  fc.loadFromJSON(state, () => { fc.renderAll(); refreshLayers(); });
+}
+function redo() {
+  if (redoStack.length < 1) return;
+  undoStack.push(JSON.stringify(fc.toJSON(['name','compFile','locked','compColor'])));
+  const state = redoStack.pop();
+  fc.loadFromJSON(state, () => { fc.renderAll(); refreshLayers(); });
+}
+fc.on('object:modified', saveState);
+fc.on('object:added', saveState);
+fc.on('object:removed', saveState);
+
+// ============================================================================
+//  CONTEXT MENU
+// ============================================================================
+const ctxMenu = document.getElementById('ctx-menu');
+
+fc.on('mouse:down', function(opt) {
+  ctxMenu.style.display = 'none';
+  if (opt.button === 3 && opt.target) {
+    opt.e.preventDefault();
+    fc.setActiveObject(opt.target);
+    showContextMenu(opt.e.clientX, opt.e.clientY, opt.target);
+  }
+});
+document.addEventListener('click', () => ctxMenu.style.display = 'none');
+
+function showContextMenu(x, y, obj) {
+  let html = '';
+  html += `<div onclick="rotateObj(90)">Rotate 90° CW</div>`;
+  html += `<div onclick="rotateObj(-90)">Rotate 90° CCW</div>`;
+  html += `<div onclick="flipObj('x')">Flip Left/Right</div>`;
+  html += `<div onclick="flipObj('y')">Flip Up/Down</div>`;
+  html += `<hr>`;
+  html += `<div onclick="changeColor()">Change Color...</div>`;
+  html += `<div onclick="toggleLabel()">Toggle Label</div>`;
+  html += `<hr>`;
+  html += `<div onclick="bringFront()">Bring to Front</div>`;
+  html += `<div onclick="sendBack()">Send to Back</div>`;
+  html += `<hr>`;
+  html += `<div onclick="toggleLock()">Lock / Unlock</div>`;
+  html += `<div onclick="renameObj()">Rename...</div>`;
+  html += `<hr>`;
+  html += `<div onclick="deleteObj()">Delete</div>`;
+  ctxMenu.innerHTML = html;
+  ctxMenu.style.display = 'block';
+  ctxMenu.style.left = x + 'px';
+  ctxMenu.style.top = y + 'px';
+}
+
+function rotateObj(deg) {
+  const obj = fc.getActiveObject(); if (!obj) return;
+  obj.rotate((obj.angle + deg) % 360); fc.renderAll(); saveState();
+}
+function flipObj(axis) {
+  const obj = fc.getActiveObject(); if (!obj) return;
+  if (axis === 'x') obj.set('flipX', !obj.flipX);
+  else obj.set('flipY', !obj.flipY);
+  fc.renderAll(); saveState();
+}
+function changeColor() {
+  const obj = fc.getActiveObject(); if (!obj) return;
+  const c = prompt('Enter color (hex or name):', obj.compColor || '#4488CC');
+  if (!c) return;
+  // Recolor: if it's an image, apply tint
+  if (obj.type === 'image') {
+    obj.filters = [new fabric.Image.filters.BlendColor({ color: c, mode: 'tint', alpha: 0.8 })];
+    obj.applyFilters(); obj.compColor = c;
+  } else {
+    obj.set('fill', c + 'CC'); obj.compColor = c;
+  }
+  fc.renderAll(); saveState();
+}
+function toggleLabel() {
+  const obj = fc.getActiveObject(); if (!obj || !obj._labelObj) return;
+  obj._labelObj.visible = !obj._labelObj.visible;
+  fc.renderAll();
+}
+function bringFront() { const obj = fc.getActiveObject(); if(obj){fc.bringToFront(obj); fc.renderAll(); refreshLayers(); saveState();} }
+function sendBack() { const obj = fc.getActiveObject(); if(obj){fc.sendToBack(obj); fc.renderAll(); refreshLayers(); saveState();} }
+function toggleLock() {
+  const obj = fc.getActiveObject(); if (!obj) return;
+  obj.locked = !obj.locked;
+  obj.set({ lockMovementX: obj.locked, lockMovementY: obj.locked,
+            lockRotation: obj.locked, hasControls: !obj.locked });
+  fc.renderAll();
+}
+function renameObj() {
+  const obj = fc.getActiveObject(); if (!obj) return;
+  const n = prompt('New name:', obj.name || '');
+  if (n !== null) { obj.name = n; if(obj._labelObj) obj._labelObj.set('text', n); fc.renderAll(); refreshLayers(); saveState(); }
+}
+function deleteObj() {
+  const obj = fc.getActiveObject(); if (!obj) return;
+  if (obj._labelObj) fc.remove(obj._labelObj);
+  fc.remove(obj); refreshLayers(); saveState();
+}
+
+// ============================================================================
+//  COMPONENT LOADING
+// ============================================================================
+function loadCompJSON(data, name, callback) {
+  const projs = data.projections || {};
+  // Show projection picker modal
+  let html = `<div class="modal-bg" onclick="if(event.target===this)this.remove()">
+    <div class="modal">
+    <h3>Load: ${name}</h3>
+    <p>Select projection view:</p>
+    <div class="proj-row">`;
+  for (const plane of ['XY','XZ','YZ']) {
+    const p = projs[plane];
+    if (!p) continue;
+    const png = p.preview_png ? `data:image/png;base64,${p.preview_png}` : '';
+    const sel = plane === 'XY' ? 'selected' : '';
+    html += `<div class="proj-card ${sel}" data-plane="${plane}" onclick="selectProj(this)">
+      <div><b>${plane}</b></div>
+      ${png ? `<img src="${png}">` : '<div>No preview</div>'}
+      <div>${p.width.toFixed(1)}" x ${p.height.toFixed(1)}"</div>
+    </div>`;
+  }
+  html += `</div>
+    <label>Name: <input type="text" id="comp-name" value="${name}"></label>
+    <label>Color: <input type="color" id="comp-color" value="#4488CC"></label>
+    <div class="btn-row">
+      <button onclick="this.closest('.modal-bg').remove()">Cancel</button>
+      <button class="primary" onclick="confirmLoadComp(this)">Place</button>
+    </div></div></div>`;
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  document.body.appendChild(div.firstElementChild);
+  // Store data for confirm
+  window._pendingComp = { data, callback };
+}
+
+function selectProj(el) {
+  el.parentElement.querySelectorAll('.proj-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function confirmLoadComp(btn) {
+  const modal = btn.closest('.modal-bg');
+  const plane = modal.querySelector('.proj-card.selected')?.dataset.plane || 'XY';
+  const name = modal.querySelector('#comp-name').value || 'Component';
+  const color = modal.querySelector('#comp-color').value;
+  modal.remove();
+
+  const { data, callback } = window._pendingComp;
+  const proj = data.projections[plane];
+  if (!proj) return;
+
+  const png = proj.preview_png;
+  const w = proj.width, h = proj.height;
+
+  if (png) {
+    const imgSrc = 'data:image/png;base64,' + png;
+    fabric.Image.fromURL(imgSrc, function(img) {
+      img.set({ left: 0, top: 0, scaleX: w / img.width, scaleY: h / img.height,
+                name: name, compFile: data.source_file || '', compColor: color,
+                originX: 'center', originY: 'center' });
+      // Make white transparent via filter
+      img.filters.push(new fabric.Image.filters.RemoveColor({ color: '#FFFFFF', distance: 0.15 }));
+      if (color !== '#4488CC') {
+        img.filters.push(new fabric.Image.filters.BlendColor({ color: color, mode: 'tint', alpha: 0.8 }));
+      }
+      img.applyFilters();
+      fc.add(img);
+      fc.setActiveObject(img);
+      fc.renderAll();
+      refreshLayers();
+      if (callback) callback(img);
+    });
+  } else {
+    const rect = new fabric.Rect({ left: 0, top: 0, width: w, height: h,
+      fill: color + 'CC', stroke: '#222', strokeWidth: 0.5,
+      name: name, compFile: data.source_file || '', compColor: color,
+      originX: 'center', originY: 'center' });
+    fc.add(rect);
+    fc.setActiveObject(rect);
+    fc.renderAll();
+    refreshLayers();
+  }
+}
+
+// ============================================================================
+//  LIBRARY
+// ============================================================================
+const LIB_BASE = 'Library/';
+
+async function loadLibrary() {
+  try {
+    const resp = await fetch(LIB_BASE + 'index.json');
+    libraryIndex = await resp.json();
+    renderLibrary();
+  } catch(e) { console.warn('Could not load library index:', e); }
+}
+
+function renderLibrary(filter = '') {
+  const tree = document.getElementById('lib-tree');
+  const cats = {};
+  for (const item of libraryIndex) {
+    const cat = item.category || 'Uncategorized';
+    if (!cats[cat]) cats[cat] = [];
+    if (filter && !item.name.toLowerCase().includes(filter.toLowerCase())) continue;
+    cats[cat].push(item);
+  }
+  let html = '';
+  for (const cat of Object.keys(cats).sort()) {
+    if (cats[cat].length === 0) continue;
+    html += `<div class="lib-cat" onclick="this.classList.toggle('collapsed')">${cat}</div>`;
+    for (const item of cats[cat]) {
+      html += `<div class="lib-item" ondblclick="loadFromLibrary('${item.file}')" title="${item.name} (${item.source})">${item.name}</div>`;
+    }
+  }
+  tree.innerHTML = html || '<div style="padding:10px;color:#888">No components found</div>';
+}
+
+function filterLibrary() {
+  renderLibrary(document.getElementById('lib-search').value);
+}
+
+async function loadFromLibrary(file) {
+  try {
+    const resp = await fetch(LIB_BASE + file);
+    const data = await resp.json();
+    const name = file.replace('.comp.json', '');
+    loadCompJSON(data, name);
+  } catch(e) { alert('Error loading component: ' + e); }
+}
+
+// ============================================================================
+//  LAYER PANEL
+// ============================================================================
+function refreshLayers() {
+  const list = document.getElementById('layer-list');
+  const objects = fc.getObjects().filter(o => o.name).reverse();
+  let html = '';
+  const active = fc.getActiveObject();
+  for (let i = 0; i < objects.length; i++) {
+    const obj = objects[i];
+    const sel = obj === active ? 'selected' : '';
+    const lock = obj.locked ? ' [locked]' : '';
+    html += `<div class="layer-item ${sel}" onclick="selectLayer(${fc.getObjects().indexOf(obj)})">`
+      + `<span>${obj.name || 'unnamed'}${lock}</span>`
+      + `<span class="layer-btns">`
+      + `<button onclick="event.stopPropagation();moveLayer(${fc.getObjects().indexOf(obj)},'up')">▲</button>`
+      + `<button onclick="event.stopPropagation();moveLayer(${fc.getObjects().indexOf(obj)},'down')">▼</button>`
+      + `</span></div>`;
+  }
+  list.innerHTML = html || '<div style="padding:10px;color:#888">No components</div>';
+}
+
+function selectLayer(idx) {
+  const obj = fc.item(idx);
+  if (obj) { fc.setActiveObject(obj); fc.renderAll(); refreshLayers(); }
+}
+
+function moveLayer(idx, dir) {
+  const obj = fc.item(idx);
+  if (!obj) return;
+  if (dir === 'up') fc.bringForward(obj);
+  else fc.sendBackwards(obj);
+  fc.renderAll(); refreshLayers(); saveState();
+}
+
+fc.on('selection:created', refreshLayers);
+fc.on('selection:updated', refreshLayers);
+fc.on('selection:cleared', refreshLayers);
+
+// ============================================================================
+//  MEASURE
+// ============================================================================
+let measureLines = [];
+
+function toggleMeasure() {
+  measureMode = !measureMode;
+  measureStart = null;
+  document.getElementById('btn-measure').classList.toggle('active', measureMode);
+  fc.defaultCursor = measureMode ? 'crosshair' : 'default';
+  fc.selection = !measureMode;
+}
+
+fc.on('mouse:down', function(opt) {
+  if (!measureMode || opt.button !== 1) return;
+  const p = fc.getPointer(opt.e);
+  if (!measureStart) {
+    measureStart = p;
+  } else {
+    const p1 = measureStart, p2 = p;
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const line = new fabric.Line([p1.x, p1.y, p2.x, p2.y], {
+      stroke: '#CC3333', strokeWidth: 0.5, strokeDashArray: [3,2],
+      selectable: false, evented: false });
+    const label = new fabric.Text(`${dist.toFixed(1)}" (${(dist/12).toFixed(1)}')`, {
+      left: (p1.x+p2.x)/2, top: (p1.y+p2.y)/2 - 3,
+      fontSize: 4, fill: '#CC3333', selectable: false, evented: false,
+      originX: 'center' });
+    fc.add(line, label);
+    measureLines.push(line, label);
+    fc.renderAll();
+    measureStart = null;
+  }
+});
+
+// ============================================================================
+//  TOOLBAR ACTIONS
+// ============================================================================
+function toggleGrid() {
+  gridOn = !gridOn;
+  document.getElementById('btn-grid').textContent = gridOn ? 'Grid: ON' : 'Grid: OFF';
+  fc.renderAll();
+}
+function toggleSnap() {
+  const sizes = [3, 6, 12, 24];
+  let idx = sizes.indexOf(gridSize);
+  if (snapOn && idx === sizes.length - 1) { snapOn = false; }
+  else if (!snapOn) { snapOn = true; gridSize = sizes[0]; }
+  else { gridSize = sizes[idx + 1]; }
+  document.getElementById('btn-snap').textContent = snapOn ? `Snap: ${gridSize}"` : 'Snap: OFF';
+}
+function zoomIn() { let z = fc.getZoom() * 1.2; fc.zoomToPoint({x:fc.getWidth()/2,y:fc.getHeight()/2}, Math.min(z,50)); updateStatus(); }
+function zoomOut() { let z = fc.getZoom() / 1.2; fc.zoomToPoint({x:fc.getWidth()/2,y:fc.getHeight()/2}, Math.max(z,0.02)); updateStatus(); }
+function zoomFit() {
+  const objs = fc.getObjects().filter(o => o.name);
+  if (!objs.length) return;
+  const g = new fabric.Group(objs);
+  const br = g.getBoundingRect();
+  g.destroy();
+  const pad = 40;
+  const z = Math.min((fc.getWidth()-pad*2) / br.width, (fc.getHeight()-pad*2) / br.height);
+  fc.setViewportTransform([1,0,0,1,0,0]);
+  fc.zoomToPoint({x: br.left + br.width/2, y: br.top + br.height/2}, z);
+  const vpt = fc.viewportTransform;
+  vpt[4] = fc.getWidth()/2 - (br.left + br.width/2) * z;
+  vpt[5] = fc.getHeight()/2 - (br.top + br.height/2) * z;
+  fc.setViewportTransform(vpt);
+  updateStatus();
+}
+function toggleTheme() {
+  const d = document.documentElement;
+  d.dataset.theme = d.dataset.theme === 'dark' ? '' : 'dark';
+  fc.renderAll();
+}
+function updateStatus() {
+  document.getElementById('st-zoom').textContent = `Zoom: ${Math.round(fc.getZoom()*100)}%`;
+}
+
+function addManual() {
+  const html = `<div class="modal-bg" onclick="if(event.target===this)this.remove()">
+    <div class="modal"><h3>Add Manual Component</h3>
+    <label>Name: <input type="text" id="man-name" value="Component"></label>
+    <label>Width (inches): <input type="number" id="man-w" value="24"></label>
+    <label>Height (inches): <input type="number" id="man-h" value="36"></label>
+    <label>Color: <input type="color" id="man-color" value="#4488CC"></label>
+    <div class="btn-row">
+      <button onclick="this.closest('.modal-bg').remove()">Cancel</button>
+      <button class="primary" onclick="confirmManual(this)">Place</button>
+    </div></div></div>`;
+  const div = document.createElement('div'); div.innerHTML = html;
+  document.body.appendChild(div.firstElementChild);
+}
+function confirmManual(btn) {
+  const m = btn.closest('.modal-bg');
+  const name = m.querySelector('#man-name').value || 'Component';
+  const w = parseFloat(m.querySelector('#man-w').value) || 24;
+  const h = parseFloat(m.querySelector('#man-h').value) || 36;
+  const c = m.querySelector('#man-color').value;
+  m.remove();
+  const rect = new fabric.Rect({ left: 0, top: 0, width: w, height: h,
+    fill: c + 'CC', stroke: '#222', strokeWidth: 0.5,
+    name: name, compColor: c, originX: 'center', originY: 'center' });
+  fc.add(rect); fc.setActiveObject(rect); fc.renderAll(); refreshLayers();
+}
+
+function uploadComp() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.comp.json';
+  inp.onchange = async () => {
+    const file = inp.files[0]; if (!file) return;
+    const text = await file.text();
+    const data = JSON.parse(text);
+    loadCompJSON(data, file.name.replace('.comp.json',''));
+  };
+  inp.click();
+}
+
+// ============================================================================
+//  SAVE / LOAD
+// ============================================================================
+function getLayoutJSON() {
+  return JSON.stringify(fc.toJSON(['name','compFile','locked','compColor']), null, 2);
+}
+function saveLayout() {
+  const data = getLayoutJSON();
+  localStorage.setItem('lab-layout-autosave', data);
+  if (currentFile) {
+    downloadFile(currentFile, data);
+  } else {
+    saveLayoutAs();
+  }
+}
+function saveLayoutAs() {
+  const name = prompt('Layout filename:', currentFile || 'my-layout.json');
+  if (!name) return;
+  currentFile = name;
+  downloadFile(name, getLayoutJSON());
+}
+function downloadFile(name, content) {
+  const blob = new Blob([content], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function loadLayout() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = async () => {
+    const file = inp.files[0]; if (!file) return;
+    const text = await file.text();
+    fc.loadFromJSON(text, () => { fc.renderAll(); refreshLayers(); updateStatus(); });
+    currentFile = file.name;
+  };
+  inp.click();
+}
+function newLayout() {
+  if (!confirm('Clear current layout?')) return;
+  fc.clear(); currentFile = null; refreshLayers();
+  fc.setViewportTransform([1,0,0,1,wrap.clientWidth/2,wrap.clientHeight/2]);
+  fc.renderAll();
+}
+function exportPNG() {
+  const url = fc.toDataURL({ format: 'png', multiplier: 3 });
+  const a = document.createElement('a'); a.href = url; a.download = 'layout.png'; a.click();
+}
+
+// ============================================================================
+//  KEYBOARD SHORTCUTS
+// ============================================================================
+document.addEventListener('keydown', function(e) {
+  const obj = fc.getActiveObject();
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.key === 'r' && obj) { rotateObj(e.shiftKey ? -90 : 90); e.preventDefault(); }
+  if (e.key === 'l' && obj) { toggleLock(); e.preventDefault(); }
+  if (e.key === 'm') { toggleMeasure(); e.preventDefault(); }
+  if (e.key === 'g') { toggleGrid(); e.preventDefault(); }
+  if (e.key === 's' && !e.metaKey && !e.ctrlKey) { toggleSnap(); e.preventDefault(); }
+  if (e.key === 'Escape') {
+    if (measureMode) toggleMeasure();
+    else fc.discardActiveObject().renderAll();
+    e.preventDefault();
+  }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && obj) { deleteObj(); e.preventDefault(); }
+  if (e.key === 'ArrowLeft' && obj) { obj.left -= (e.shiftKey ? 1 : gridSize); fc.renderAll(); saveState(); e.preventDefault(); }
+  if (e.key === 'ArrowRight' && obj) { obj.left += (e.shiftKey ? 1 : gridSize); fc.renderAll(); saveState(); e.preventDefault(); }
+  if (e.key === 'ArrowUp' && obj) { obj.top -= (e.shiftKey ? 1 : gridSize); fc.renderAll(); saveState(); e.preventDefault(); }
+  if (e.key === 'ArrowDown' && obj) { obj.top += (e.shiftKey ? 1 : gridSize); fc.renderAll(); saveState(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z') { undo(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Z') { redo(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') { saveLayout(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'o') { loadLayout(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'd' && obj) {
+    e.preventDefault();
+    obj.clone(function(cloned) {
+      cloned.set({ left: obj.left + 12, top: obj.top + 12, name: obj.name });
+      fc.add(cloned); fc.setActiveObject(cloned); fc.renderAll(); refreshLayers(); saveState();
+    }, ['name','compFile','locked','compColor']);
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === '=') { zoomIn(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === '-') { zoomOut(); e.preventDefault(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === '0') { zoomFit(); e.preventDefault(); }
+});
+
+// ============================================================================
+//  INIT
+// ============================================================================
+loadLibrary();
+
+// Auto-restore from localStorage
+const saved = localStorage.getItem('lab-layout-autosave');
+if (saved) {
+  try { fc.loadFromJSON(saved, () => { fc.renderAll(); refreshLayers(); }); }
+  catch(e) {}
+}
+
+// Auto-save every 30s
+setInterval(() => {
+  localStorage.setItem('lab-layout-autosave', getLayoutJSON());
+}, 30000);
+</script>
+</body>
+</html>
