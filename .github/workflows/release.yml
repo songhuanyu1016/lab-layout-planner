@@ -1,8 +1,8 @@
-name: Build Windows Release
+name: Build Release
 
-# Push a tag like v1.0.0 to build LabLayoutPlanner.exe and publish a
-# GitHub Release with the zipped app attached.
-# "Run workflow" (manual) builds the zip as a downloadable artifact only.
+# Push a tag like v1.0.0 to build the Windows exe and the macOS app and
+# publish a GitHub Release with both zips attached.
+# "Run workflow" (manual) builds the zips as downloadable artifacts only.
 on:
   push:
     tags:
@@ -13,7 +13,7 @@ permissions:
   contents: write   # needed to create the release
 
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -32,21 +32,70 @@ jobs:
         shell: pwsh
         run: |
           $name = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'dev' }
-          $zip = "LabLayoutPlanner-$name-win64.zip"
+          $zip = "LabLayoutPlanner-$name-windows.zip"
           7z a -tzip -mx=5 $zip .\dist\LabLayoutPlanner | Out-Null
           "ZIP=$zip" >> $env:GITHUB_ENV
           Get-Item $zip | Select-Object Name, Length
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v5
         with:
-          name: LabLayoutPlanner-win64
+          name: windows
           path: ${{ env.ZIP }}
           retention-days: 14
 
+  macos:
+    runs-on: macos-latest        # Apple Silicon (arm64)
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Build app (build_mac.sh)
+        run: bash build_mac.sh
+
+      - name: Zip app folder
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then name="$GITHUB_REF_NAME"; else name="dev"; fi
+          zip="LabLayoutPlanner-$name-macos-arm64.zip"
+          # ditto keeps the .app bundle's symlinks and permissions intact
+          ditto -c -k --keepParent dist/LabLayoutPlanner-mac "$zip"
+          echo "ZIP=$zip" >> "$GITHUB_ENV"
+          ls -lh "$zip"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: macos
+          path: ${{ env.ZIP }}
+          retention-days: 14
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          merge-multiple: true
+
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ZIP }}
+          files: dist/*.zip
           generate_release_notes: true
+          body: |
+            ## Downloads
+            - **Windows:** `LabLayoutPlanner-${{ github.ref_name }}-windows.zip` — unzip and run `LabLayoutPlanner.exe`.
+            - **macOS (Apple Silicon):** `LabLayoutPlanner-${{ github.ref_name }}-macos-arm64.zip` — unzip, keep `LabLayoutPlanner.app` and the `Library` folder together.
+
+            Keep the `Library` folder next to the exe / app; it holds the component library.
+
+            **macOS first launch:** the app is not signed by Apple, so macOS will block it. Open Terminal in the unzipped folder and run:
+            ```
+            xattr -dr com.apple.quarantine LabLayoutPlanner.app
+            ```
+            then double-click the app. (This also stops macOS from running it from a hidden temporary copy, which would hide the `Library` folder.)

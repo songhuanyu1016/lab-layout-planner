@@ -287,7 +287,11 @@ def main():
     frames[-1].save(os.path.join(HERE, "icon.png"))
     frames[-1].save(os.path.join(HERE, "icon.ico"), format="ICO",
                     sizes=[(s, s) for s in sizes], append_images=frames[:-1])
-    print("Wrote icon.ico / icon.png in", HERE)
+    # macOS: Apple's icon grid leaves ~10% transparent margin around the tile
+    mac = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    mac.alpha_composite(full.resize((824, 824), Image.LANCZOS), (100, 100))
+    mac.save(os.path.join(HERE, "icon.icns"), format="ICNS")
+    print("Wrote icon.ico / icon.icns / icon.png in", HERE)
 
 
 if __name__ == "__main__":

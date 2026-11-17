@@ -37,9 +37,14 @@ FROZEN = getattr(sys, "frozen", False)
 # Folder holding the exe (frozen) or this script -- user data such as the
 # Library folder lives here, side by side with the executable.
 APP_DIR = os.path.dirname(os.path.abspath(sys.executable if FROZEN else __file__))
+if FROZEN and sys.platform == "darwin" and APP_DIR.endswith(".app/Contents/MacOS"):
+    # macOS bundle: the exe is LabLayoutPlanner.app/Contents/MacOS/...;
+    # Library sits next to LabLayoutPlanner.app itself.
+    APP_DIR = os.path.dirname(os.path.dirname(os.path.dirname(APP_DIR)))
 # Folder holding bundled read-only resources (icon etc.)
 RES_DIR = getattr(sys, "_MEIPASS", APP_DIR)
-ICON_PATH = os.path.join(RES_DIR, "assets", "icon.ico")
+ICON_PATH = os.path.join(RES_DIR, "assets",
+                         "icon.ico" if os.name == "nt" else "icon.png")
 
 # ============================================================================
 #  CONSTANTS
