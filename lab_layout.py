@@ -26,8 +26,20 @@ from PyQt5.QtCore import (
 )
 from PyQt5.QtGui import (
     QPolygonF, QColor, QPen, QBrush, QPainter, QFont, QPainterPath,
-    QImage, QPixmap, QPalette, QKeySequence
+    QImage, QPixmap, QPalette, QKeySequence, QIcon
 )
+
+# ============================================================================
+#  PATHS (works both as a script and as a PyInstaller-frozen exe)
+# ============================================================================
+
+FROZEN = getattr(sys, "frozen", False)
+# Folder holding the exe (frozen) or this script -- user data such as the
+# Library folder lives here, side by side with the executable.
+APP_DIR = os.path.dirname(os.path.abspath(sys.executable if FROZEN else __file__))
+# Folder holding bundled read-only resources (icon etc.)
+RES_DIR = getattr(sys, "_MEIPASS", APP_DIR)
+ICON_PATH = os.path.join(RES_DIR, "assets", "icon.ico")
 
 # ============================================================================
 #  CONSTANTS
@@ -424,11 +436,16 @@ def load_component_file(path):
 def _run_conversion_subprocess(stp_path, output_path, tolerance=5.0, units='mm'):
     """Run STP conversion in a separate process (avoids matplotlib/Qt conflicts)."""
     import subprocess
-    script = os.path.abspath(__file__)
-    result = subprocess.run(
-        [sys.executable, script, '--convert', stp_path, output_path,
-         str(tolerance), units],
-        capture_output=True, text=True, timeout=600)
+    if FROZEN:
+        cmd = [sys.executable, '--convert']
+    else:
+        cmd = [sys.executable, os.path.abspath(__file__), '--convert']
+    cmd += [stp_path, output_path, str(tolerance), units]
+    kwargs = {}
+    if os.name == 'nt':
+        kwargs['creationflags'] = 0x08000000  # CREATE_NO_WINDOW
+    result = subprocess.run(cmd, capture_output=True, text=True,
+                            timeout=600, **kwargs)
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or "Conversion failed")
     return output_path
@@ -1649,7 +1666,7 @@ class ComponentLibraryPanel(QDockWidget):
     component_requested = pyqtSignal(str)  # emits file path
 
     # Default library path relative to this script
-    DEFAULT_LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Library")
+    DEFAULT_LIB = os.path.join(APP_DIR, "Library")
 
     def __init__(self, parent=None):
         super().__init__("Component Library", parent)
@@ -3362,6 +3379,15 @@ if __name__ == "__main__":
     # GUI mode
     app = QApplication(sys.argv)
     app.setApplicationName("Lab Layout Planner")
+    if os.path.isfile(ICON_PATH):
+        app.setWindowIcon(QIcon(ICON_PATH))
+    if os.name == 'nt':
+        try:  # own taskbar icon instead of python.exe's
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "LabLayoutPlanner")
+        except Exception:
+            pass
     window = LabLayoutApp()
     window.show()
     sys.exit(app.exec_())
